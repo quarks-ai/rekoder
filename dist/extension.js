@@ -17,14 +17,40 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.deactivate = exports.activate = void 0;
 const vscode = __webpack_require__(1);
-const const_1 = __webpack_require__(2);
-const filesystem_1 = __webpack_require__(3);
+const fs = __webpack_require__(2);
+const const_1 = __webpack_require__(3);
+const filesystem_1 = __webpack_require__(4);
 const utils_1 = __webpack_require__(6);
 function activate(context) {
     let startRecording = vscode.commands.registerCommand(const_1.COMMAND_START_RECORDING, () => __awaiter(this, void 0, void 0, function* () {
         const filename = yield (0, utils_1.showInput)("", "Enter the filename where you want to save session recording");
         const rekoderSavingURI = yield (0, filesystem_1.initRekorderFolder)(filename);
         console.log("result : ", rekoderSavingURI);
+        let ws = fs.createWriteStream(rekoderSavingURI);
+        let changes = [];
+        vscode.workspace.onDidChangeTextDocument(logChanges);
+        function logChanges(e) {
+            if (changes.length > 0) {
+                if (e.document.uri.path !== changes[changes.length - 1].file) {
+                    console.log("change document");
+                }
+            }
+            e.contentChanges.forEach((c) => {
+                let change = {
+                    file: e.document.uri.path,
+                    language: "ts",
+                    selection: "",
+                    value: c.text,
+                    timestamp: new Date(),
+                    type: "",
+                    position: [],
+                };
+                changes.push(change);
+                console.log(changes);
+                ws.write(c.text);
+            });
+            console.log(changes);
+        }
     }));
     context.subscriptions.push(startRecording);
 }
@@ -41,6 +67,12 @@ module.exports = require("vscode");
 
 /***/ }),
 /* 2 */
+/***/ ((module) => {
+
+module.exports = require("fs");
+
+/***/ }),
+/* 3 */
 /***/ ((__unused_webpack_module, exports) => {
 
 
@@ -50,7 +82,7 @@ exports.COMMAND_START_RECORDING = "rekoder.startRecording";
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 
@@ -65,11 +97,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.initRekorderFolder = exports.getProjectPath = exports.createDir = exports.createFile = exports.showErrorMessage = void 0;
-const path = __webpack_require__(4);
-const fs_1 = __webpack_require__(5);
+const path = __webpack_require__(5);
+const fs_1 = __webpack_require__(2);
 const vscode_1 = __webpack_require__(1);
 const utils_1 = __webpack_require__(6);
-const fs = (__webpack_require__(5).promises);
+const fs = (__webpack_require__(2).promises);
 const EXTENSION = ".rekoder";
 function exists(path) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -147,16 +179,10 @@ exports.initRekorderFolder = initRekorderFolder;
 
 
 /***/ }),
-/* 4 */
-/***/ ((module) => {
-
-module.exports = require("path");
-
-/***/ }),
 /* 5 */
 /***/ ((module) => {
 
-module.exports = require("fs");
+module.exports = require("path");
 
 /***/ }),
 /* 6 */
